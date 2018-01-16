@@ -127,7 +127,7 @@ class MyHTMLParser(HTMLParser):
             if self.numchild_stack[5:] == [2, 1, 1, 0]:
                 download_link = url + "/download/{}.torrent"
                 self.current["name"] = data
-                self.current["desc_link"] = self.attrs_stack[7]["href"]
+                self.current["desc_link"] = url + self.attrs_stack[7]["href"]
                 self.current["link"] = download_link.format(
                     self.attrs_stack[7]["href"].split("/")[2]
                 )
