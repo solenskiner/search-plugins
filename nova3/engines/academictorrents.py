@@ -1,7 +1,8 @@
-#VERSION: 0.3
+#VERSION: 0.4
 #AUTHORS: Henrik Asp (solenskiner@gmail.com)
+#         Sakib Abrar (sakib.abrar@yahoo.com) 
 
-# Copyright (c) 2019, Henrik Asp
+# Copyright (c) 2020, Henrik Asp
 # All rights reserved.
 
 # Redistribution and use in source and binary forms, with or without
@@ -106,40 +107,29 @@ class MyHTMLParser(HTMLParser):
     def post_handle_end_tag(self, tag):
         pass
 
-    def handle_start_tag_tr(self, attrs):
-        self.current = self.defaults.copy()
-
-    def handle_end_tag_tr(self):
-        match_torrent = ['root', 'html', 'body', 'table', 'tr']
-        if self.tag_stack[:len(match_torrent)] == match_torrent:
-            self.data["torrents"].append(self.current.copy())
-
     def handle_data(self, data):
-        match_next = ['root', 'html', 'body', 'center', 'p', 'ul', 'li', 'a']
-        match_torrent = ['root', 'html', 'body', 'table', 'tr']
+        match_next = ['root', 'center', 'p', 'ul', 'li', 'a']
+        match_torrent = ['root', 'table', 'tr']
         url = "http://academictorrents.com"
-
+        # print(data)
         if self.tag_stack[:len(match_next)] == match_next and "Next" in data:
-            self.data["next_page"] = url + "/" + self.attrs_stack[7]["href"]
-
+            self.data["next_page"] = url + "/" + self.attrs_stack[5]["href"]
         elif self.tag_stack[:len(match_torrent)] == match_torrent:
-
-            if self.numchild_stack[5:] == [2, 1, 1, 0]:
-                download_link = url + "/download/{}.torrent"
+            if self.numchild_stack[5:] == [1, 0] and self.current["name"] == -1:
                 self.current["name"] = data
-                self.current["desc_link"] = url + self.attrs_stack[7]["href"]
+                download_link = url + "/download/{}.torrent"
+                self.current["desc_link"] = url + self.attrs_stack[5]["href"]
                 self.current["link"] = download_link.format(
-                    self.attrs_stack[7]["href"].split("/")[2]
+                    self.attrs_stack[5]["href"].split("/")[2]
                 )
-
-            elif self.numchild_stack[5:] == [5, 0]:
+            elif self.numchild_stack[5:] == [] and "B" in data:
                 self.current["size"] = data
-
-            elif self.numchild_stack[5:] == [6, 1, 1, 1, 0]:
+            elif self.numchild_stack[5:] == [1, 1, 0] and self.current["seeds"] == 0:
                 self.current["seeds"] = data.strip("+")
-
-            elif self.numchild_stack[5:] == [6, 2, 1, 1, 0]:
+            elif self.numchild_stack[5:] == [1, 1, 0]:
                 self.current["leech"] = data.strip("+")
+                self.data["torrents"].append(self.current.copy())
+                self.current = self.defaults.copy()
 
     def get_results(self):
         return self.data
